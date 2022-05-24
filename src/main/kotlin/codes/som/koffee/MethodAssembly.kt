@@ -5,6 +5,7 @@ import codes.som.koffee.labels.LabelRegistry
 import codes.som.koffee.labels.LabelScope
 import codes.som.koffee.sugar.ModifiersAccess
 import codes.som.koffee.sugar.TypesAccess
+import org.objectweb.asm.tree.AbstractInsnNode
 import org.objectweb.asm.tree.InsnList
 import org.objectweb.asm.tree.MethodNode
 import org.objectweb.asm.tree.TryCatchBlockNode
@@ -45,4 +46,15 @@ public fun MethodNode.koffee(routine: MethodAssembly.() -> Unit): MethodNode {
     val assembly = MethodAssembly(this)
     routine(assembly)
     return assembly.node
+}
+
+public fun MethodNode.insert(target: AbstractInsnNode? = null, routine: InstructionAssembly.() -> Unit) {
+    val list = assemble(routine)
+    target
+        ?.run { instructions.insert(target, list) } 
+        ?: instructions.insert(list)
+}
+
+public fun MethodNode.insertBefore(target: AbstractInsnNode, routine: InstructionAssembly.() -> Unit) {
+    instructions.insertBefore(target, assemble(routine))
 }
