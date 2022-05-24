@@ -1,12 +1,20 @@
+import fr.brouillard.oss.jgitver.GitVersionCalculator
+import fr.brouillard.oss.jgitver.Strategies
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
+buildscript {
+    dependencies {
+        classpath(group = "fr.brouillard.oss", name = "jgitver", version = "0.14.+")
+    }
+}
+
 plugins {
-    kotlin("jvm") version "1.6.10"
+    kotlin("jvm") version "1.6.21"
     `maven-publish`
 }
 
-group = "codes.som"
-version = "8.0.2"
+group = "dev.su5ed"
+version = getGitVersion()
 
 repositories {
     mavenCentral()
@@ -22,6 +30,10 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.8.2")
 }
 
+java {
+    withSourcesJar()
+}
+
 kotlin {
     explicitApi()
 }
@@ -35,13 +47,71 @@ tasks.test {
 }
 
 publishing {
-    repositories {
-        maven("$buildDir/repo")
-    }
-
     publications {
-        register("mavenJava", MavenPublication::class) {
+        register<MavenPublication>(project.name) {
             from(components["java"])
+
+            pom {
+                name.set(project.name)
+                description.set("Java bytecode assembler as a Kotlin DSL (Su5eD's fork)")
+                url.set("https://github.com/Su5eD/Koffee")
+
+                scm {
+                    url.set("https://github.com/Su5eD/Koffee")
+                    connection.set("scm:git:git://github.com/Su5eD/Koffee")
+                    developerConnection.set("scm:git:git@github.com:Su5eD/Koffee.git")
+                }
+
+                issueManagement {
+                    system.set("github")
+                    url.set("https://github.com/Su5eD/Koffee/issues")
+                }
+
+                licenses {
+                    license {
+                        name.set("MIT")
+                        url.set("https://github.com/Su5eD/Koffee/blob/master/LICENSE.txt")
+                        distribution.set("repo")
+                    }
+                }
+
+                developers {
+                    developer {
+                        id.set("videogame-hacker")
+                        name.set("Charlotte Som")
+                    }
+
+                    developer {
+                        id.set("su5ed")
+                        name.set("Su5eD")
+                    }
+                }
+            }
         }
     }
+
+    repositories {
+        val mavenUser = System.getenv("GOFANCY_MAVEN_USER")
+        val mavenToken = System.getenv("GOFANCY_MAVEN_TOKEN")
+
+        if (mavenUser != null && mavenToken != null) {
+            maven {
+                name = "gofancy"
+                url = uri("https://maven.gofancy.wtf/releases")
+
+                credentials {
+                    username = mavenUser
+                    password = mavenToken
+                }
+            }
+        }
+    }
+}
+
+fun getGitVersion(): String {
+    val jgitver = GitVersionCalculator.location(rootDir)
+        .setNonQualifierBranches("master")
+        .setVersionPattern("\${M}\${<m}\${<meta.COMMIT_DISTANCE}\${-~meta.QUALIFIED_BRANCH_NAME}")
+        .setStrategy(Strategies.PATTERN)
+    return jgitver.version
 }
