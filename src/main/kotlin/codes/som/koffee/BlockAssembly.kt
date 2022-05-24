@@ -17,6 +17,15 @@ public class BlockAssembly(override val instructions: InsnList, override val try
 }
 
 /**
+ * Create an [InsnList] used to represent an instruction list, using a [BlockAssembly].
+ */
+public fun assemble(routine: BlockAssembly.() -> Unit): InsnList {
+    val blockAssembly = BlockAssembly(InsnList(), mutableListOf())
+    routine(blockAssembly)
+    return blockAssembly.instructions
+}
+
+/**
  * Create an [InsnList] and the [TryCatchBlockNode]s used to represent an instruction list,
  * using a [BlockAssembly].
  */
