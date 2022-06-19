@@ -22,6 +22,10 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.8.2")
 }
 
+java {
+    withSourcesJar()
+}
+
 kotlin {
     explicitApi()
 }
@@ -35,13 +39,28 @@ tasks.test {
 }
 
 publishing {
-    repositories {
-        maven("$buildDir/repo")
+    publications {
+        register<MavenPublication>("mavenJava") {
+            from(components["java"])
+        }
     }
 
-    publications {
-        register("mavenJava", MavenPublication::class) {
-            from(components["java"])
+    repositories {
+        repositories {
+            val mavenUser = System.getenv("GOFANCY_MAVEN_USER")
+            val mavenToken = System.getenv("GOFANCY_MAVEN_TOKEN")
+
+            if (mavenUser != null && mavenToken != null) {
+                maven {
+                    name = "gofancy"
+                    url = uri("https://maven.gofancy.wtf/releases")
+
+                    credentials {
+                        username = mavenUser
+                        password = mavenToken
+                    }
+                }
+            }
         }
     }
 }
